@@ -1,0 +1,133 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { OpportunityStatus } from "@/lib/types";
+
+function getOpportunityPayload(formData: FormData, status: OpportunityStatus) {
+  const startAt = String(formData.get("start_at") || "");
+  const endAt = String(formData.get("end_at") || "");
+
+  return {
+    title: String(formData.get("title") || "").trim(),
+    description: String(formData.get("description") || "").trim(),
+    location_name: String(formData.get("location_name") || "").trim(),
+    address_line1: String(formData.get("address_line1") || "").trim(),
+    address_line2: String(formData.get("address_line2") || "").trim(),
+    city: String(formData.get("city") || "").trim(),
+    state: String(formData.get("state") || "").trim(),
+    zip_code: String(formData.get("zip_code") || "").trim(),
+    start_at: startAt,
+    end_at: endAt,
+    capacity: Number(formData.get("capacity") || 0),
+    minimum_age: formData.get("minimum_age")
+      ? Number(formData.get("minimum_age"))
+      : null,
+    accessibility_notes: String(formData.get("accessibility_notes") || "").trim(),
+    requirements: String(formData.get("requirements") || "").trim(),
+    status,
+    published_at: status === "published" ? new Date().toISOString() : null,
+  };
+}
+
+export async function createOpportunity(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const submitAction = String(formData.get("submit_action") || "draft");
+  const status: OpportunityStatus = submitAction === "publish" ? "published" : "draft";
+
+  const { data: organization, error: orgError } = await supabase
+    .from("organizations")
+    .select("id, is_approved")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (orgError || !organization) {
+    redirect("/nonprofit/organization?error=Create an organization profile before posting opportunities.");
+  }
+
+  if (!organization.is_approved) {
+    redirect("/nonprofit/dashboard?error=Your organization must be approved before publishing opportunities.");
+  }
+
+  const payload = {
+    ...getOpportunityPayload(formData, status),
+    organization_id: organization.id,
+    created_by: user.id,
+  };
+
+  if (!payload.title || !payload.description || !payload.start_at || !payload.end_at || payload.capacity <= 0) {
+    redirect("/nonprofit/opportunities/new?error=Title, description, start time, end time, and capacity are required.");
+  }
+
+  const { error } = await supabase.from("opportunities").insert(payload);
+
+  if (error) {
+    redirect(`/nonprofit/opportunities/new?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/nonprofit/dashboard?message=Opportunity created.");
+}
+
+export async function updateOpportunity(formData: FormData) {
+  const opportunityId = String(formData.get("opportunity_id") || "");
+  const submitAction = String(formData.get("submit_action") || "draft");
+
+  if (!opportunityId) {
+    redirect("/nonprofit/dashboard?error=Missing opportunity ID.");
+  }
+
+  const status: OpportunityStatus =
+    submitAction === "publish"
+      ? "published"
+      : submitAction === "close"
+        ? "closed"
+        : "draft";
+
+  const payload = getOpportunityPayload(formData, status);
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("opportunities")
+    .update(payload)
+    .eq("id", opportunityId);
+
+  if (error) {
+    redirect(`/nonprofit/opportunities/${opportunityId}/edit?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/nonprofit/dashboard?message=Opportunity updated.");
+}
+
+export async function archiveOpportunity(formData: FormData) {
+  const opportunityId = String(formData.get("opportunity_id") || "");
+
+  if (!opportunityId) {
+    redirect("/nonprofit/dashboard?error=Missing opportunity ID.");
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("opportunities")
+    .update({
+      status: "archived",
+      is_deleted: true,
+    })
+    .eq("id", opportunityId);
+
+  if (error) {
+    redirect(`/nonprofit/dashboard?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/nonprofit/dashboard?message=Opportunity archived.");
+}
