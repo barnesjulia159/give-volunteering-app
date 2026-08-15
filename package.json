@@ -6,7 +6,7 @@
     "native:sync": "node scripts/ensure-native-bindings.mjs",
     "predev": "npm run native:sync",
     "dev": "next dev",
-    "prebuild": "npm run native:sync",
+    "prebuild": "npm run native:sync && npm run prisma:generate",
     "build": "next build",
     "prestart": "npm run native:sync",
     "start": "next start",
