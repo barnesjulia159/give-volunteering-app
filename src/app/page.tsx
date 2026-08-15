@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 
+
 export default function HomePage() {
   return (
 
@@ -12,19 +13,19 @@ export default function HomePage() {
           Get Involved. Volunteer Easily.
           <Image
             src="/images/logo2.png"
-            width={500}
-            height={500}
+            width={300}
+            height={300}
             alt="logo"
         />
         </p>
 
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950 md:text-6xl">
+        <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950 md:text-3xl">
           Find meaningful ways to serve your community.
         </h1>
 
         <p className="mt-5 max-w-2xl text-lg text-slate-700">
           GIVE connects volunteers with local nonprofit organizations that need support.
-          Browse opportunities, book opportunities, and help organizations create real
+          Browse opportunities, book opportunities, and help local organizations create real
           impact.
         </p>
 
@@ -52,18 +53,18 @@ export default function HomePage() {
         <ol className="mt-5 space-y-4 text-slate-700">
           <li>
             <strong>1. Nonprofits post opportunities.</strong> Approved organizations
-            publish volunteer needs with dates, location, capacity, and requirements.
+            can then publish volunteer opportunities with dates, location, capacity, and requirements.
           </li>
           <li>
             <strong>2. Volunteers discover opportunities.</strong> Visitors can browse
             public listings and view details before signing up.
           </li>
           <li>
-            <strong>3. Volunteers book service.</strong> Registered volunteers reserve
-            a spot and manage their bookings.
+            <strong>3. Volunteers book service.</strong> Registered volunteers can reserve
+            a spot and use GIVE to manage their bookings.
           </li>
           <li>
-            <strong>4. Coordinators track participation.</strong> Organizations can
+            <strong>4. Volunteers and Nonprofits can track participation.</strong> Organizations can
             review signups and record attendance.
           </li>
         </ol>

@@ -2,17 +2,24 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublicOpportunityListing } from "@/lib/types";
+import { createBooking } from "@/lib/actions/bookings";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type OpportunityDetailsPageProps = {
 	params: Promise<{
 		id: string;
 	}>;
+	searchParams: Promise<{
+		error?: string;
+	}>;
 };
 
 export default async function OpportunityDetailsPage({
 	params,
+	searchParams,
 }: OpportunityDetailsPageProps) {
 	const { id } = await params;
+	const { error } = await searchParams;
 	const supabase = await createClient();
 
 	const { data } = await supabase
@@ -28,6 +35,33 @@ export default async function OpportunityDetailsPage({
 	const opportunity = data as PublicOpportunityListing;
 	const startDate = new Date(opportunity.start_at);
 	const endDate = new Date(opportunity.end_at);
+
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+
+	let role: string | null = null;
+	let existingBookingStatus: string | null = null;
+
+	if (user) {
+		const { data: profile } = await supabase
+			.from("profiles")
+			.select("role")
+			.eq("id", user.id)
+			.single();
+
+		role = profile?.role ?? null;
+
+		const { data: existingBooking } = await supabase
+			.from("bookings")
+			.select("status")
+			.eq("opportunity_id", opportunity.id)
+			.eq("volunteer_id", user.id)
+			.neq("status", "cancelled")
+			.maybeSingle();
+
+		existingBookingStatus = existingBooking?.status ?? null;
+	}
 
 	return (
 		<section className="mx-auto max-w-4xl space-y-6">
@@ -116,26 +150,79 @@ export default async function OpportunityDetailsPage({
 				<aside className="rounded-2xl bg-white p-6 shadow-sm">
 					<h2 className="text-2xl font-semibold text-slate-950">Ready to help?</h2>
 
-					<p className="mt-3 text-slate-700">
-						Create an account or sign in to book this opportunity and manage your
-						volunteer schedule.
-					</p>
+					{error && <p className="alert-error mt-3">{error}</p>}
 
-					<div className="mt-6 flex flex-col gap-3">
-						<Link
-							href="/register"
-							className="rounded-md bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800"
-						>
-							Create account
-						</Link>
+					{!user ? (
+						<>
+							<p className="mt-3 text-slate-700">
+								Create an account or sign in to book this opportunity and manage your
+								volunteer schedule.
+							</p>
 
-						<Link
-							href="/login"
-							className="rounded-md border border-slate-300 px-4 py-3 text-center font-medium text-slate-800 hover:bg-slate-100"
-						>
-							Sign in
-						</Link>
-					</div>
+							<div className="mt-6 flex flex-col gap-3">
+								<Link
+									href="/register"
+									className="rounded-md bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800"
+								>
+									Create account
+								</Link>
+
+								<Link
+									href="/login"
+									className="rounded-md border border-slate-300 px-4 py-3 text-center font-medium text-slate-800 hover:bg-slate-100"
+								>
+									Sign in
+								</Link>
+							</div>
+						</>
+					) : role !== "volunteer" ? (
+						<p className="mt-3 text-slate-700">
+							Only volunteer accounts can book opportunities.
+						</p>
+					) : existingBookingStatus ? (
+						<>
+							<p className="mt-3 text-slate-700">
+								You are already booked for this opportunity (status:{" "}
+								{existingBookingStatus}).
+							</p>
+
+							<Link
+								href="/volunteer/bookings"
+								className="mt-6 inline-flex rounded-md border border-slate-300 px-4 py-3 text-center font-medium text-slate-800 hover:bg-slate-100"
+							>
+								View my bookings
+							</Link>
+						</>
+					) : opportunity.spots_remaining <= 0 ? (
+						<p className="mt-3 text-slate-700">
+							This opportunity is full. Check back later in case a spot opens up.
+						</p>
+					) : (
+						<>
+							<p className="mt-3 text-slate-700">
+								Reserve your spot for this opportunity.
+							</p>
+
+							<form action={createBooking} className="mt-4 space-y-4">
+								<input type="hidden" name="opportunity_id" value={opportunity.id} />
+
+								<div className="form-field">
+									<label htmlFor="notes" className="form-label">
+										Notes (optional)
+									</label>
+									<textarea
+										id="notes"
+										name="notes"
+										className="form-input min-h-20"
+									/>
+								</div>
+
+								<SubmitButton className="w-full" pendingText="Booking...">
+									Book this opportunity
+								</SubmitButton>
+							</form>
+						</>
+					)}
 				</aside>
 			</div>
 		</section>

@@ -10,23 +10,36 @@
     "build": "next build",
     "prestart": "npm run native:sync",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.9.1",
     "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.110.3",
+    "@types/pg": "^8.21.0",
     "next": "16.2.10",
+    "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@prisma/client": "^7.9.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "prisma": "^7.9.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "prisma@7.9.1": true,
+    "@prisma/engines@7.9.1": true,
+    "unrs-resolver@1.12.2": true
   }
 }

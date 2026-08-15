@@ -3,8 +3,8 @@ import "./globals.css";
 import { AppHeader } from "@/components/AppHeader";
 
 export const metadata: Metadata = {
-  title: "GIVE Volunteering",
-  description: "Discover and book meaningful volunteer opportunities.",
+  title: "GIVE Volunteering Platform",
+  description: "GIVE: Get Involved. Volunteer Easily.",
 };
 
 export default function RootLayout({

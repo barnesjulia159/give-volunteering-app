@@ -13,6 +13,16 @@ export type BookingStatus =
 
 export type AttendanceStatus = "present" | "absent" | "excused" | "no_show";
 
+export const AVAILABILITY_DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
 export type Profile = {
   id: string;
   role: UserRole;

@@ -45,7 +45,7 @@ export default async function OpportunitiesPage({
         <h1 className="text-4xl font-bold">Volunteer Opportunities</h1>
 
         <p className="mt-2 text-slate-700">
-          Search for public opportunities posted by approved nonprofit
+          Search for public opportunities posted by our partner nonprofit
           organizations.
         </p>
       </div>

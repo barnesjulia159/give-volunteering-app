@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <section className="mx-auto max-w-md rounded-xl bg-white p-6 shadow-sm">
       <h1 className="text-3xl font-bold">Log in</h1>
       <p className="mt-2 text-slate-600">
-        Access your GIVE account to manage bookings or opportunities.
+        Access your GIVE account to manage booking and to sign up for opportunities.
       </p>
 
       {params.error && <p className="alert-error mt-4">{params.error}</p>}
@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
       <p className="mt-4 text-sm text-slate-600">
         Need an account?{" "}
-        <Link href="/register" className="font-medium text-emerald-700 hover:underline">
+        <Link href="/register" className="font-medium text-teal-700 hover:underline">
           Register
         </Link>
       </p>

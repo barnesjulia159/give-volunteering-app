@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "auth"]
+}
+
+enum UserRole {
+  volunteer
+  Organization
+  admin
+
+  @@schema("public")
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+
+  @@schema("public")
+}
+
+enum OpportunityStatus {
+  draft
+  published
+  closed
+  archived
+
+  @@schema("public")
+}
+
+enum BookingStatus {
+  booked
+  cancelled
+  waitlisted
+  completed
+  no_show
+
+  @@schema("public")
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  excused
+  no_show
+
+  @@schema("public")
+}
+
+model Organization {
+  id                String   @id @default(uuid()) @db.Uuid
+  user_id           String   @unique @db.Uuid
+  name              String
+  mission_statement String
+  description       String?
+  contact_name      String
+  contact_email     String
+  contact_phone     String?
+  website_url       String?
+  address_line1     String?
+  address_line2     String?
+  city              String?
+  state             String?
+  zip_code          String?
+  is_approved       Boolean  @default(false)
+  created_at        DateTime @default(now()) @db.Timestamptz
+  updated_at        DateTime @updatedAt @db.Timestamptz
+
+  profile       Profile       @relation(fields: [user_id], references: [id])
+  opportunities Opportunity[]
+
+  @@map("organizations")
+  @@schema("public")
+}
+
+model Opportunity {
+  id                  String            @id @default(uuid()) @db.Uuid
+  organization_id     String            @db.Uuid
+  created_by          String            @db.Uuid
+  title               String
+  description         String
+  location_name       String?
+  address_line1       String?
+  address_line2       String?
+  city                String?
+  state               String?
+  zip_code            String?
+  start_at            DateTime          @db.Timestamptz
+  end_at              DateTime          @db.Timestamptz
+  capacity            Int
+  minimum_age         Int?
+  accessibility_notes String?
+  requirements        String?
+  status              OpportunityStatus @default(draft)
+  is_virtual          Boolean           @default(false)
+  is_deleted          Boolean           @default(false)
+  published_at        DateTime?         @db.Timestamptz
+  created_at          DateTime          @default(now()) @db.Timestamptz
+  updated_at          DateTime          @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  bookings     Booking[]
+
+  @@map("opportunities")
+  @@schema("public")
+}
+
+model Booking {
+  id             String        @id @default(uuid()) @db.Uuid
+  opportunity_id String        @db.Uuid
+  volunteer_id   String        @db.Uuid
+  status         BookingStatus @default(booked)
+  notes          String?
+  booked_at      DateTime      @default(now()) @db.Timestamptz
+  cancelled_at   DateTime?     @db.Timestamptz
+  created_at     DateTime      @default(now()) @db.Timestamptz
+  updated_at     DateTime      @updatedAt @db.Timestamptz
+
+  opportunity Opportunity @relation(fields: [opportunity_id], references: [id])
+  volunteer   Profile     @relation(fields: [volunteer_id], references: [id])
+
+  @@map("bookings")
+  @@schema("public")
+}
+
+model user {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@schema("public")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@schema("public")
+}
+
+enum ProfileRole {
+  volunteer
+  admin
+
+  @@schema("public")
+}
+
+model Profile {
+  id                String         @id @default(uuid()) @db.Uuid
+  role              ProfileRole    @default(volunteer)
+  firstName         String?        @map("first_name")
+  lastName          String?        @map("last_name")
+  displayName       String         @map("display_name")
+  phone             String?
+  city              String?
+  state             String?
+  zipCode           String?        @map("zip_code")
+  bio               String?
+  availabilityNotes String?        @map("availability_notes")
+  approvalStatus    ApprovalStatus @default(pending) @map("approval_status")
+  isActive          Boolean        @default(true) @map("is_active")
+  skillsAndCauses   String?
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  organization Organization?
+  bookings     Booking[]
+
+  @@map("profiles")
+  @@schema("public")
+}
