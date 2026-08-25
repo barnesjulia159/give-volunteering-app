@@ -14,7 +14,10 @@ type NonprofitDashboardPageProps = {
 
 type OrganizationWithOpportunities = Organization & {
   opportunities: (Opportunity & {
-    bookings: { status: string }[];
+    bookings: {
+      status: string;
+      attendance_logs: { status: string }[];
+    }[];
   })[];
 };
 
@@ -51,7 +54,10 @@ async function NonprofitDashboardContent({
       opportunities (
         *,
         bookings (
-          status
+          status,
+          attendance_logs (
+            status
+          )
         )
       )
     `
@@ -133,6 +139,7 @@ async function NonprofitDashboardContent({
                   <th className="py-3 pr-4">Status</th>
                   <th className="py-3 pr-4">Max capacity</th>
                   <th className="py-3 pr-4">Sign-ups</th>
+                  <th className="py-3 pr-4">Checked-in</th>
                   <th className="py-3 pr-4">Actions</th>
                 </tr>
               </thead>
@@ -153,6 +160,15 @@ async function NonprofitDashboardContent({
                     <td className="py-3 pr-4">
                       {opportunity.bookings?.filter(
                         (booking) => booking.status !== "cancelled"
+                      ).length ?? 0}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {opportunity.bookings?.filter(
+                        (booking) =>
+                          booking.status !== "cancelled" &&
+                          booking.attendance_logs?.some(
+                            (attendance) => attendance.status === "present"
+                          )
                       ).length ?? 0}
                     </td>
                     <td className="flex flex-wrap gap-2 py-3 pr-4">
@@ -176,6 +192,14 @@ async function NonprofitDashboardContent({
                           Archive
                         </SubmitButton>
                       </form>
+                      {opportunity.status === "published" && (
+                        <Link
+                          href={`/nonprofit/opportunities/${opportunity.id}/participants`}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-slate-800 hover:bg-slate-100"
+                        >
+                          Participants
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))}

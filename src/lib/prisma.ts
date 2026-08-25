@@ -6,6 +6,9 @@ function createPrismaClient() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL!,
     ssl: { rejectUnauthorized: false },
+    max: 1,
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({

@@ -24,6 +24,7 @@ enum ApprovalStatus {
   approved
   rejected
 
+  @@map("profile_approval_status")
   @@schema("public")
 }
 
@@ -43,6 +44,7 @@ enum BookingStatus {
   completed
   no_show
 
+  @@map("booking_status")
   @@schema("public")
 }
 
@@ -52,6 +54,16 @@ enum AttendanceStatus {
   excused
   no_show
 
+  @@map("attendance_status")
+  @@schema("public")
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  failed
+
+  @@map("notification_status")
   @@schema("public")
 }
 
@@ -109,6 +121,7 @@ model Opportunity {
   organization Organization @relation(fields: [organization_id], references: [id])
   bookings     Booking[]
   notifications Notification[]
+  volunteerHours VolunteerHour[]
 
   @@map("opportunities")
   @@schema("public")
@@ -136,20 +149,25 @@ model Booking {
 
 model Notification {
   id             String    @id @default(uuid()) @db.Uuid
+  sender_id      String?   @db.Uuid
   recipient_id   String    @db.Uuid
   booking_id     String?   @db.Uuid
   opportunity_id String?   @db.Uuid
   type           String
   title          String
   message        String
+  status         NotificationStatus @default(sent)
   read_at        DateTime? @db.Timestamptz
+    archived_at    DateTime? @db.Timestamptz
   created_at     DateTime  @default(now()) @db.Timestamptz
 
-  recipient   Profile      @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
+  sender      Profile?      @relation("NotificationsSent", fields: [sender_id], references: [id], onDelete: SetNull)
+  recipient   Profile       @relation("NotificationsReceived", fields: [recipient_id], references: [id], onDelete: Cascade)
   booking     Booking?     @relation(fields: [booking_id], references: [id], onDelete: SetNull)
   opportunity Opportunity? @relation(fields: [opportunity_id], references: [id], onDelete: SetNull)
 
   @@index([recipient_id, read_at])
+  @@index([sender_id, status])
   @@index([created_at])
   @@map("notifications")
   @@schema("public")
@@ -161,6 +179,8 @@ model AttendanceLog {
   recorded_by String?          @db.Uuid
   status      AttendanceStatus
   notes       String?
+  check_in_at DateTime?        @db.Timestamptz
+  check_out_at DateTime?       @db.Timestamptz
   recorded_at DateTime         @default(now()) @db.Timestamptz
   created_at  DateTime         @default(now()) @db.Timestamptz
   updated_at  DateTime         @updatedAt @db.Timestamptz
@@ -170,6 +190,26 @@ model AttendanceLog {
 
   @@index([recorded_by])
   @@map("attendance_logs")
+  @@schema("public")
+}
+
+model VolunteerHour {
+  id             String   @id @default(uuid()) @db.Uuid
+  volunteer_id   String   @db.Uuid
+  opportunity_id String   @db.Uuid
+  recorded_by    String   @db.Uuid
+  hours          Float
+  notes          String?
+  recorded_at    DateTime @default(now()) @db.Timestamptz
+  created_at     DateTime @default(now()) @db.Timestamptz
+  updated_at     DateTime @updatedAt @db.Timestamptz
+
+  volunteer   Profile     @relation("VolunteerHours", fields: [volunteer_id], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunity_id], references: [id], onDelete: Cascade)
+  recorder    Profile     @relation("HoursRecordedBy", fields: [recorded_by], references: [id], onDelete: Restrict)
+
+  @@index([volunteer_id, recorded_at])
+  @@index([opportunity_id, recorded_at])
   @@schema("public")
 }
 
@@ -194,16 +234,9 @@ model EmailVerificationToken {
   @@schema("public")
 }
 
-enum ProfileRole {
-  volunteer
-  admin
-
-  @@schema("public")
-}
-
 model Profile {
   id                String         @id @default(uuid()) @db.Uuid
-  role              ProfileRole    @default(volunteer)
+  role              String         @default("volunteer")
   firstName         String?        @map("first_name")
   lastName          String?        @map("last_name")
   displayName       String         @map("display_name")
@@ -213,16 +246,21 @@ model Profile {
   zipCode           String?        @map("zip_code")
   bio               String?
   availabilityNotes String?        @map("availability_notes")
-  approvalStatus    ApprovalStatus @default(pending) @map("approval_status")
-  isActive          Boolean        @default(true) @map("is_active")
-  skillsAndCauses   String?
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
 
-  organization Organization?
-  bookings     Booking[]
-  notifications Notification[]
-  attendanceLogs AttendanceLog[] @relation("AttendanceRecordedBy")
+  approvalStatus    ApprovalStatus @default(pending) @map("approval_status")
+
+  isActive           Boolean       @default(true) @map("is_active")
+  skillsAndCauses    String?
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  organization          Organization?
+  bookings              Booking[]
+  sentNotifications     Notification[] @relation("NotificationsSent")
+  receivedNotifications Notification[] @relation("NotificationsReceived")
+  attendanceLogs        AttendanceLog[] @relation("AttendanceRecordedBy")
+  volunteerHours        VolunteerHour[] @relation("VolunteerHours")
+  recordedHours         VolunteerHour[] @relation("HoursRecordedBy")
 
   @@map("profiles")
   @@schema("public")
