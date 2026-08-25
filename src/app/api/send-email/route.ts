@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resend } from "@/lib/resend";
+import { getResendClient } from "@/lib/resend";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -40,6 +40,14 @@ export async function POST(request: Request) {
         {
           status: 400
         }
+      );
+    }
+
+    const resend = getResendClient();
+    if (!resend) {
+      return NextResponse.json(
+        { error: "Email service is not configured. Set RESEND_API_KEY in the deployment environment." },
+        { status: 503 }
       );
     }
 
