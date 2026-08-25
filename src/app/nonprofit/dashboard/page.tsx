@@ -13,7 +13,9 @@ type NonprofitDashboardPageProps = {
 };
 
 type OrganizationWithOpportunities = Organization & {
-  opportunities: Opportunity[];
+  opportunities: (Opportunity & {
+    bookings: { status: string }[];
+  })[];
 };
 
 export default async function NonprofitDashboardPage({
@@ -47,7 +49,10 @@ async function NonprofitDashboardContent({
       `
       *,
       opportunities (
-        *
+        *,
+        bookings (
+          status
+        )
       )
     `
     )
@@ -126,7 +131,8 @@ async function NonprofitDashboardContent({
                   <th className="py-3 pr-4">Title</th>
                   <th className="py-3 pr-4">Date</th>
                   <th className="py-3 pr-4">Status</th>
-                  <th className="py-3 pr-4">Capacity</th>
+                  <th className="py-3 pr-4">Max capacity</th>
+                  <th className="py-3 pr-4">Sign-ups</th>
                   <th className="py-3 pr-4">Actions</th>
                 </tr>
               </thead>
@@ -144,6 +150,11 @@ async function NonprofitDashboardContent({
                       {opportunity.status}
                     </td>
                     <td className="py-3 pr-4">{opportunity.capacity}</td>
+                    <td className="py-3 pr-4">
+                      {opportunity.bookings?.filter(
+                        (booking) => booking.status !== "cancelled"
+                      ).length ?? 0}
+                    </td>
                     <td className="flex flex-wrap gap-2 py-3 pr-4">
                       <Link
                         href={`/nonprofit/opportunities/${opportunity.id}/edit`}
