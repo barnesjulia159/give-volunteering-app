@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const hourEntry = await prisma.volunteerHour.create({
+  const hourEntry = await prisma.volunteer_hours.create({
     data: {
       volunteer_id: volunteerId,
       opportunity_id: opportunityId,
@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       hours,
       notes,
       recorded_at: new Date(),
+      updated_at: new Date(),
     },
   });
 

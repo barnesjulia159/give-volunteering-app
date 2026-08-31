@@ -6,7 +6,7 @@ function createPrismaClient() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL!,
     ssl: { rejectUnauthorized: false },
-    max: 1,
+    max: process.env.NODE_ENV === "development" ? 10 : 20,
     connectionTimeoutMillis: 10_000,
     idleTimeoutMillis: 30_000,
   });

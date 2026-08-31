@@ -42,6 +42,15 @@ export function AttendanceControls({ bookingId }: AttendanceControlsProps) {
       }
       setAttendance(result);
       setFeedback(endpoint === "check-in" ? "Checked in successfully." : "Checked out successfully.");
+      
+      // Broadcast update to all pages/tabs so hours dashboard refreshes immediately
+      try {
+        const channel = new BroadcastChannel("attendance-updates");
+        channel.postMessage({ type: "attendance-update", endpoint, bookingId });
+        channel.close();
+      } catch (error) {
+        console.warn("BroadcastChannel not supported");
+      }
     } catch {
       setError("Unable to update attendance.");
     } finally {

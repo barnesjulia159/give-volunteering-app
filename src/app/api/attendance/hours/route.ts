@@ -57,54 +57,51 @@ export async function GET(request: Request) {
     }
   }
 
-  const where = opportunityId
-    ? { booking: { opportunity_id: opportunityId } }
-    : { booking: { volunteer_id: targetUserId } };
-
-  const [attendanceLogs, manualHours] = await Promise.all([
-    prisma.attendanceLog.findMany({
-      where,
-      orderBy: { recorded_at: "desc" },
+  const [bookings, manualHours] = await Promise.all([
+    prisma.booking.findMany({
+      where: opportunityId
+        ? { opportunity_id: opportunityId, status: { not: "cancelled" } }
+        : { volunteer_id: targetUserId, status: { not: "cancelled" } },
+      orderBy: { booked_at: "desc" },
       include: {
-        booking: {
-          select: {
-            volunteer_id: true,
-            opportunity_id: true,
-            opportunity: { select: { title: true } },
-          },
-        },
+        attendanceLog: true,
+        opportunity: { select: { title: true } },
       },
     }),
-    prisma.volunteerHour.findMany({
+    prisma.volunteer_hours.findMany({
       where: opportunityId
         ? { opportunity_id: opportunityId }
         : { volunteer_id: targetUserId },
       orderBy: { recorded_at: "desc" },
-      include: { opportunity: { select: { title: true } } },
+      include: { opportunities: { select: { title: true } } },
     }),
   ]);
 
   const data = [
-    ...attendanceLogs.map((log) => ({
-      id: log.id,
-      bookingId: log.booking_id,
-      volunteerId: log.booking.volunteer_id,
-      opportunityId: log.booking.opportunity_id,
-      opportunityTitle: log.booking.opportunity.title,
-      status: log.status,
-      source: "attendance" as const,
-      checkInAt: log.check_in_at,
-      checkOutAt: log.check_out_at,
-      recordedAt: log.recorded_at,
-      hours: calculateHours(log.check_in_at, log.check_out_at),
-      notes: log.notes,
-    })),
+    ...bookings.map((booking) => {
+      const attendance = booking.attendanceLog;
+
+      return {
+        id: attendance?.id ?? booking.id,
+        bookingId: booking.id,
+        volunteerId: booking.volunteer_id,
+        opportunityId: booking.opportunity_id,
+        opportunityTitle: booking.opportunity.title,
+        status: attendance?.status ?? booking.status,
+        source: "attendance" as const,
+        checkInAt: attendance?.check_in_at ?? null,
+        checkOutAt: attendance?.check_out_at ?? null,
+        recordedAt: attendance?.recorded_at ?? booking.booked_at,
+        hours: calculateHours(attendance?.check_in_at ?? null, attendance?.check_out_at ?? null),
+        notes: attendance?.notes ?? booking.notes,
+      };
+    }),
     ...manualHours.map((entry) => ({
       id: entry.id,
       bookingId: null,
       volunteerId: entry.volunteer_id,
       opportunityId: entry.opportunity_id,
-      opportunityTitle: entry.opportunity.title,
+      opportunityTitle: entry.opportunities.title,
       status: "manual",
       source: "manual" as const,
       checkInAt: null,

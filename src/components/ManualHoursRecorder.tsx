@@ -34,6 +34,15 @@ export function ManualHoursRecorder({ volunteerId, opportunityId }: ManualHoursR
       setHours("");
       setNotes("");
       setFeedback("Volunteer hours recorded.");
+      
+      // Broadcast update to all pages/tabs so hours dashboard refreshes immediately
+      try {
+        const channel = new BroadcastChannel("attendance-updates");
+        channel.postMessage({ type: "hours-recorded", volunteerId, opportunityId });
+        channel.close();
+      } catch (error) {
+        console.warn("BroadcastChannel not supported");
+      }
     } catch {
       setError("Unable to record volunteer hours.");
     } finally {
