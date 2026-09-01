@@ -45,7 +45,8 @@
   "allowScripts": {
     "prisma@7.9.1": true,
     "@prisma/engines@7.9.1": true,
-    "unrs-resolver@1.12.2": true
+    "unrs-resolver@1.12.2": true,
+    "sharp@0.34.5": true
   },
   "overrides": {
     "uuid": "^11.1.0"
