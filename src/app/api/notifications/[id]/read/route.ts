@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
-type ReadNotificationRouteProps = {
-  params: Promise<{ id: string }>;
-};
-
 export async function PATCH(
   _request: Request,
-  { params }: ReadNotificationRouteProps
+  { params }: RouteContext<"/api/notifications/[id]/read">
 ) {
   const supabase = await createClient();
   const {
